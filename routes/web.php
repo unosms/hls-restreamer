@@ -12,7 +12,13 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/streams', function () {
+    Route::match(['GET', 'POST'], '/streams', function () {
+        if (request()->isMethod('post')) {
+            ob_start();
+            include resource_path('views/dashboard_streams.php');
+            return response(ob_get_clean());
+        }
+
         return view('streams');
     })->name('streams');
 
