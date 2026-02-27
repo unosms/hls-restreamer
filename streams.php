@@ -340,11 +340,6 @@ $totalChannels=count($channels);
   </style>
 </head>
 <body>
-<form method="post" action="/logout" style="margin-bottom: 10px;">
-  <?= csrf_input() ?>
-  <button type="submit" style="padding:10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; background:#fff; cursor:pointer;">Logout</button>
-</form>
-
 <div class="topbar">
   <h2 style="margin:0;">HLS Streams Manager</h2>
   <span class="pill">Total channels: <?=h((string)$totalChannels)?></span>
