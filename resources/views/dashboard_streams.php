@@ -463,6 +463,7 @@ $totalChannels=count($channels);
 </div>
 <?php endif; ?>
 
+<?php if (!$isSettingsMode): ?>
 <div class="card">
   <h3>Existing channels</h3>
 
@@ -548,6 +549,7 @@ $totalChannels=count($channels);
     <?php endforeach; ?>
   <?php endif; ?>
 </div>
+<?php endif; ?>
 
 <script>
 /* ===== keys ===== */
