@@ -74,11 +74,12 @@
             background: #fff;
             min-height: 280px;
         }
-        .logo-box object {
+        .logo-box img {
             width: 100%;
             height: 100%;
             min-height: 280px;
             display: block;
+            object-fit: cover;
         }
         @media (max-width: 860px) {
             .topbar {
@@ -119,12 +120,7 @@
                 <p class="subtitle">by <span class="brand">Lightwave</span></p>
             </div>
             <div class="logo-box">
-                <object data="{{ asset('Lightwave_Logo_2.pdf') }}" type="application/pdf">
-                    <p style="padding: 16px; margin: 0;">
-                        Logo preview unavailable. Open
-                        <a href="{{ asset('Lightwave_Logo_2.pdf') }}" target="_blank" rel="noopener">Lightwave logo</a>.
-                    </p>
-                </object>
+                <img src="{{ asset('lightwave.png') }}" alt="Lightwave Logo" style="width: 100%; height: 100%; object-fit: cover; min-height: 280px;">
             </div>
         </section>
     </main>
