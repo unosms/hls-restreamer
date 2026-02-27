@@ -30,6 +30,16 @@ function run_cmd($cmd){
   exec($cmd.' 2>&1', $out, $rc);
   return [$rc, implode("\n",$out)];
 }
+function run_maybe_sudo($baseCmd){
+  [$rc, $out] = run_cmd($baseCmd);
+  if ($rc === 0) {
+    return [$rc, $out];
+  }
+
+  // On some Ubuntu setups web user needs sudoers NOPASSWD for service/log access.
+  [$rc2, $out2] = run_cmd('sudo -n '.$baseCmd);
+  return [$rc2, $out2];
+}
 function svc($ch){ return "hls_{$ch}.service"; }
 
 function fmt_bytes($n){
@@ -53,9 +63,17 @@ function fmt_uptime_from_monotonic($startMono){
 }
 
 function systemd_show($service){
-  $props = "ActiveState,SubState,ExecMainPID,ExecMainStartTimestampMonotonic,ActiveEnterTimestampMonotonic,ActiveExitTimestampMonotonic";
-  $cmd = "sudo /bin/systemctl show ".escapeshellarg($service)." -p ".$props;
-  [$rc,$out]=run_cmd($cmd);
+  $props = [
+    'ActiveState',
+    'SubState',
+    'ExecMainPID',
+    'ExecMainStartTimestampMonotonic',
+    'ActiveEnterTimestampMonotonic',
+    'ActiveExitTimestampMonotonic',
+  ];
+  $sysctl = is_executable('/bin/systemctl') ? '/bin/systemctl' : 'systemctl';
+  $propArgs = implode(' ', array_map(fn($p) => '-p '.escapeshellarg($p), $props));
+  [$rc,$out]=run_maybe_sudo($sysctl.' show '.escapeshellarg($service).' '.$propArgs);
   if ($rc!==0) return ['_error'=>$out];
 
   $data=[];
@@ -69,8 +87,8 @@ function systemd_show($service){
 
 function nginx_served_bytes($channel, $logPath, $tailLines){
   $needle = "/live/$channel/";
-  $cmd = "sudo /usr/bin/tail -n ".intval($tailLines)." ".escapeshellarg($logPath);
-  [$rc,$out]=run_cmd($cmd);
+  $tailBin = is_executable('/usr/bin/tail') ? '/usr/bin/tail' : 'tail';
+  [$rc,$out]=run_maybe_sudo($tailBin.' -n '.intval($tailLines).' '.escapeshellarg($logPath));
   if ($rc!==0) return [0,0,$out];
 
   $bytes=0; $hits=0;
@@ -740,11 +758,18 @@ async function refreshAll(){
     const ch = card.id.replace('card-','');
     try {
       const data = await fetchStatus(ch);
-      if (!data.ok) continue;
+      if (!data.ok) {
+        const st = document.getElementById('state-'+ch);
+        if (st) st.textContent = 'State: error';
+        continue;
+      }
       const box = document.getElementById('status-'+ch);
       const open = (box && box.style.display === 'block');
       applyStatus(ch, data, open);
-    } catch(e){}
+    } catch(e){
+      const st = document.getElementById('state-'+ch);
+      if (st) st.textContent = 'State: offline';
+    }
   }
 }
 
