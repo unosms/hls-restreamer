@@ -74,7 +74,20 @@ function systemd_show($service){
   $sysctl = is_executable('/bin/systemctl') ? '/bin/systemctl' : 'systemctl';
   $propArgs = implode(' ', array_map(fn($p) => '-p '.escapeshellarg($p), $props));
   [$rc,$out]=run_maybe_sudo($sysctl.' show '.escapeshellarg($service).' '.$propArgs);
-  if ($rc!==0) return ['_error'=>$out];
+  if ($rc!==0) {
+    // Fallback: determine service state using is-active and return partial data.
+    [$rc2, $out2] = run_maybe_sudo($sysctl.' is-active '.escapeshellarg($service));
+    $active = trim($out2);
+    if ($rc2 === 0 || in_array($active, ['active', 'inactive', 'failed', 'activating', 'deactivating'], true)) {
+      return [
+        'ActiveState' => $active ?: 'unknown',
+        'SubState' => $active ?: 'unknown',
+        'ExecMainPID' => '',
+        '_warn' => trim($out),
+      ];
+    }
+    return ['_error'=>$out];
+  }
 
   $data=[];
   foreach (explode("\n",$out) as $line){
@@ -144,6 +157,10 @@ $serverIps = get_server_ipv4_list();
 
 /* ===================== AJAX status ONLY ===================== */
 if (($_GET['ajax'] ?? '') === 'status') {
+  // Keep AJAX JSON valid even when PHP warnings/notices occur on some servers.
+  @ini_set('display_errors', '0');
+  while (ob_get_level() > 0) { @ob_end_clean(); }
+
   header('Content-Type: application/json');
 
   $ch = trim($_GET['channel'] ?? '');
@@ -151,7 +168,16 @@ if (($_GET['ajax'] ?? '') === 'status') {
 
   $service = svc($ch);
   $info = systemd_show($service);
-  if (isset($info['_error'])) { echo json_encode(['ok'=>false,'error'=>$info['_error']]); exit; }
+  $statusErr = $info['_error'] ?? null;
+  if ($statusErr) {
+    // Keep API response usable by UI even when service probe fails.
+    $info = [
+      'ActiveState' => 'unknown',
+      'SubState' => 'unknown',
+      'ExecMainPID' => '',
+      '_warn' => $statusErr,
+    ];
+  }
 
   $active = $info['ActiveState'] ?? 'unknown';
   $sub    = $info['SubState'] ?? 'unknown';
@@ -179,6 +205,8 @@ if (($_GET['ajax'] ?? '') === 'status') {
     'served'=>fmt_bytes($servedBytes),
     'hits'=>$hits,
     'logErr'=>$logErr,
+    'statusErr'=>$statusErr,
+    'warn'=>$info['_warn'] ?? null,
     'raw'=>$info
   ]);
   exit;
