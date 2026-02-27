@@ -12,11 +12,15 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::match(['GET', 'POST'], '/streams', function () {
+    Route::get('/streams', function () {
+        return view('streams');
+    })->name('streams');
+
+    Route::match(['GET', 'POST'], '/streams-content', function () {
         ob_start();
         include resource_path('views/dashboard_streams.php');
         return response(ob_get_clean());
-    })->name('streams');
+    })->name('streams.content');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
