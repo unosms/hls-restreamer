@@ -1,7 +1,14 @@
 <?php
 
-require_once __DIR__ . '/auth.php';
-require_login();
+if (function_exists('auth')) {
+  if (!auth()->check()) {
+    header('Location: /login');
+    exit;
+  }
+} else {
+  require_once __DIR__ . '/auth.php';
+  require_login();
+}
 
 $baseDir   = '/var/www/stream/live';
 $manage    = '/usr/local/bin/hls_manage.sh';
@@ -9,6 +16,9 @@ $nginxLog  = '/var/log/nginx/access.log';
 $tailLines = 20000;
 
 function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+function csrf_input(){
+  return function_exists('csrf_field') ? csrf_field() : '';
+}
 function valid_channel($ch){ return (bool)preg_match('/^[A-Za-z0-9_-]{1,50}$/', $ch); }
 function valid_url($u){
   if (!filter_var($u, FILTER_VALIDATE_URL)) return false;
@@ -330,23 +340,29 @@ $totalChannels=count($channels);
   </style>
 </head>
 <body>
-<a href="/logout.php" style="padding:10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;">Logout</a>
+<form method="post" action="/logout" style="margin-bottom: 10px;">
+  <?= csrf_input() ?>
+  <button type="submit" style="padding:10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; background:#fff; cursor:pointer;">Logout</button>
+</form>
 
 <div class="topbar">
   <h2 style="margin:0;">HLS Streams Manager</h2>
   <span class="pill">Total channels: <?=h((string)$totalChannels)?></span>
 
   <form method="post" style="margin:0;">
+    <?= csrf_input() ?>
     <button name="action" value="export_backup" type="submit">Export Backup (.tar.gz)</button>
   </form>
 
   <form method="post" enctype="multipart/form-data" style="margin:0;">
+    <?= csrf_input() ?>
     <input type="hidden" name="action" value="upload_backup">
     <input type="file" name="backup_file" accept=".tar.gz" required>
     <button type="submit">Upload Backup</button>
   </form>
 
   <form method="post" style="margin:0;">
+    <?= csrf_input() ?>
     <button name="action" value="restore_backup" type="submit"
             onclick="return confirm('Restore will overwrite configs (streams.php, nginx, systemd, sudoers). Continue?');">
       Restore Latest Uploaded
@@ -360,6 +376,7 @@ $totalChannels=count($channels);
 <div class="card">
   <h3>Add new stream</h3>
   <form method="post">
+    <?= csrf_input() ?>
     <input type="hidden" name="action" value="add">
     <div class="row">
       <div style="flex:1; min-width:220px;">
@@ -432,6 +449,7 @@ $totalChannels=count($channels);
         </div>
 
         <form method="post" class="row" style="margin-top:8px;">
+          <?= csrf_input() ?>
           <input type="hidden" name="channel" value="<?=h($ch)?>">
           <button name="action" value="start" type="submit">Start</button>
           <button name="action" value="stop" type="submit">Stop</button>
@@ -454,6 +472,7 @@ $totalChannels=count($channels);
 
         <div class="editBox" id="edit-<?=h($ch)?>">
           <form method="post" class="row" onsubmit="return confirm('Update URL for <?=h($ch)?> ?');">
+            <?= csrf_input() ?>
             <input type="hidden" name="action" value="edit_url">
             <input type="hidden" name="channel" value="<?=h($ch)?>">
             <div style="flex:2; min-width:320px;">
