@@ -192,7 +192,7 @@ if (($_GET['ajax'] ?? '') === 'status') {
     $uptime = "—";
   }
 
-  [$servedBytes,$hits,$logErr] = nginx_served_bytes($ch, $GLOBALS['nginxLog'], $GLOBALS['tailLines']);
+  [$servedBytes,$hits,$logErr] = nginx_served_bytes($ch, $nginxLog, $tailLines);
 
   echo json_encode([
     'ok'=>true,
