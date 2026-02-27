@@ -7,8 +7,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
+Route::match(['GET', 'POST'], '/dashboard', function () {
+    ob_start();
+    include resource_path('views/dashboard_streams.php');
+    return response(ob_get_clean());
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -16,11 +18,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::match(['GET', 'POST'], '/streams-manager', function () {
-        ob_start();
-        include base_path('streams.php');
-        return response(ob_get_clean());
-    })->name('streams.manager');
 });
 
 require __DIR__.'/auth.php';

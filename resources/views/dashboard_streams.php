@@ -365,6 +365,9 @@ $totalChannels=count($channels);
     code{background:#f5f5f5; padding:2px 6px; border-radius:6px; word-break: break-all;}
     .meta{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; color:#333;}
     .pill{background:#f3f3f3; padding:4px 8px; border-radius:999px; font-size:13px;}
+    .state-running{background:#e8fff0; color:#1f7a35; font-weight:700;}
+    .state-stopped{background:#ffecec; color:#9b1c1c; font-weight:700;}
+    .state-unknown{background:#f4f4f5; color:#555;}
     .statusBox{display:none; margin-top:10px; padding:10px; border-radius:10px; background:#f8fbff; border:1px dashed #cbd5ff;}
     .editBox{display:none; margin-top:10px; padding:10px; border-radius:10px; background:#fffef6; border:1px dashed #e7d37a;}
     .muted{color:#666; font-size:13px;}
@@ -482,19 +485,17 @@ $totalChannels=count($channels);
         Source: <code><?= $savedUrl ? h($savedUrl) : '—' ?></code>
 
         <div class="meta">
-          <span class="pill" id="state-<?=h($ch)?>">State: —</span>
+          <span class="pill state-unknown" id="state-<?=h($ch)?>">State: Unknown</span>
           <span class="pill" id="uptime-<?=h($ch)?>">Uptime: —</span>
-          <span class="pill" id="served-<?=h($ch)?>">Served: —</span>
-          <span class="pill" id="hits-<?=h($ch)?>">Hits: —</span>
           <span class="pill" id="speed-<?=h($ch)?>">Speed: —</span>
         </div>
 
         <form method="post" class="row" style="margin-top:8px;">
           <?= csrf_input() ?>
           <input type="hidden" name="channel" value="<?=h($ch)?>">
-          <button name="action" value="start" type="submit">Start</button>
-          <button name="action" value="stop" type="submit">Stop</button>
-          <button name="action" value="restart" type="submit">Restart</button>
+          <button name="action" value="start" type="submit" data-action="start" data-ch="<?=h($ch)?>">Start</button>
+          <button name="action" value="stop" type="submit" data-action="stop" data-ch="<?=h($ch)?>">Stop</button>
+          <button name="action" value="restart" type="submit" data-action="restart" data-ch="<?=h($ch)?>">Restart</button>
 
           <button type="button" onclick="toggleStatus('<?=h($ch)?>')">Status</button>
 
@@ -675,12 +676,10 @@ document.addEventListener('change', function(e){
 /* ===== EXISTING LOGIC BELOW (unchanged) ===== */
 const lastTraffic = {};
 
-function fmtSpeed(bytesPerSec){
+function fmtSpeedKbps(bytesPerSec){
   if (!isFinite(bytesPerSec) || bytesPerSec < 0) return '—';
-  const units = ['B/s','KB/s','MB/s','GB/s'];
-  let v = bytesPerSec, i = 0;
-  while (v >= 1024 && i < units.length - 1){ v /= 1024; i++; }
-  return (v >= 10 ? v.toFixed(0) : v.toFixed(1)) + ' ' + units[i];
+  const kbps = (bytesPerSec * 8) / 1000;
+  return (kbps >= 10 ? kbps.toFixed(0) : kbps.toFixed(1)) + ' Kbps';
 }
 
 function updateSpeed(ch, servedBytes){
@@ -702,13 +701,24 @@ function updateSpeed(ch, servedBytes){
     return;
   }
   const el = document.getElementById('speed-'+ch);
-  if (el) el.textContent = 'Speed: ' + fmtSpeed(db/dt);
+  if (el) el.textContent = 'Speed: ' + fmtSpeedKbps(db/dt);
   lastTraffic[ch] = { bytes: servedBytes, t: now };
 }
 
 async function fetchStatus(ch){
-  const res = await fetch('?ajax=status&channel=' + encodeURIComponent(ch));
-  return await res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch('?ajax=status&channel=' + encodeURIComponent(ch), { signal: controller.signal });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return { ok: false, error: 'Invalid JSON response', raw: text };
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function toggleStatus(ch){
@@ -719,24 +729,33 @@ async function toggleStatus(ch){
   box.style.display = 'block';
   box.innerHTML = '<div class="muted">Loading…</div>';
 
-  const data = await fetchStatus(ch);
-  if (!data.ok){
-    box.innerHTML = '<div class="muted">Error: '+(data.error||'unknown')+'</div>';
-    return;
+  try {
+    const data = await fetchStatus(ch);
+    if (!data.ok){
+      box.innerHTML = '<div class="muted">Error: '+(data.error||'unknown')+'</div>';
+      return;
+    }
+    applyStatus(ch, data, true);
+  } catch (e) {
+    box.innerHTML = '<div class="muted">Error: request failed</div>';
   }
-  applyStatus(ch, data, true);
 }
 
 function applyStatus(ch, data, updateBox){
   const st = document.getElementById('state-'+ch);
   const up = document.getElementById('uptime-'+ch);
-  const sv = document.getElementById('served-'+ch);
-  const hi = document.getElementById('hits-'+ch);
-
-  if (st) st.textContent  = 'State: ' + data.active + '/' + data.sub;
+  if (st) {
+    if (data.isRunning) {
+      st.textContent = 'State: Running';
+      st.classList.remove('state-stopped', 'state-unknown');
+      st.classList.add('state-running');
+    } else {
+      st.textContent = 'State: Offline';
+      st.classList.remove('state-running', 'state-unknown');
+      st.classList.add('state-stopped');
+    }
+  }
   if (up) up.textContent  = 'Uptime: ' + data.uptime;
-  if (sv) sv.textContent  = 'Served: ' + data.served;
-  if (hi) hi.textContent  = 'Hits: ' + (data.hits||0);
 
   if (!data.isRunning) {
     lastTraffic[ch] = null;
@@ -752,9 +771,9 @@ function applyStatus(ch, data, updateBox){
     '<div><b>Service:</b> hls_' + ch + '.service</div>' +
     '<div><b>PID:</b> ' + (data.pid || '—') + '</div>' +
     '<div><b>Uptime:</b> ' + data.uptime + '</div>' +
-    '<div><b>Traffic:</b> Served ' + data.served + ' (hits ' + (data.hits||0) + ')</div>' +
     '<div><b>Speed:</b> ' + (document.getElementById('speed-'+ch)?.textContent || 'Speed: —').replace('Speed: ','') + '</div>' +
     (data.logErr ? '<div class="muted">Log read warning: '+data.logErr+'</div>' : '') +
+    (data.statusErr ? '<div class="muted">Status warning: '+data.statusErr+'</div>' : '') +
     '<hr>' +
     '<div class="muted">Raw systemd:</div>' +
     '<pre style="white-space:pre-wrap; margin:0;">' + JSON.stringify(data.raw, null, 2) + '</pre>';
@@ -774,6 +793,25 @@ function openEdit(ch, savedUrl){
 }
 
 document.addEventListener('click', function(e){
+  const actionBtn = e.target.closest('button[data-action]');
+  if (actionBtn) {
+    const ch = actionBtn.dataset.ch || '';
+    const action = actionBtn.dataset.action || '';
+    const st = document.getElementById('state-'+ch);
+    const up = document.getElementById('uptime-'+ch);
+    if (st && action === 'start') {
+      st.textContent = 'State: Starting...';
+      st.classList.remove('state-stopped', 'state-unknown');
+      st.classList.add('state-running');
+    }
+    if (st && action === 'stop') {
+      st.textContent = 'State: Stopping...';
+      st.classList.remove('state-running', 'state-unknown');
+      st.classList.add('state-stopped');
+      if (up) up.textContent = 'Uptime: —';
+    }
+  }
+
   const btn = e.target.closest('.editBtn');
   if (!btn) return;
   e.preventDefault();
@@ -788,7 +826,11 @@ async function refreshAll(){
       const data = await fetchStatus(ch);
       if (!data.ok) {
         const st = document.getElementById('state-'+ch);
-        if (st) st.textContent = 'State: error';
+        if (st) {
+          st.textContent = 'State: Offline';
+          st.classList.remove('state-running', 'state-unknown');
+          st.classList.add('state-stopped');
+        }
         continue;
       }
       const box = document.getElementById('status-'+ch);
@@ -796,7 +838,11 @@ async function refreshAll(){
       applyStatus(ch, data, open);
     } catch(e){
       const st = document.getElementById('state-'+ch);
-      if (st) st.textContent = 'State: offline';
+      if (st) {
+        st.textContent = 'State: Offline';
+        st.classList.remove('state-running', 'state-unknown');
+        st.classList.add('state-stopped');
+      }
     }
   }
 }
@@ -804,6 +850,7 @@ async function refreshAll(){
 document.addEventListener('DOMContentLoaded', () => {
   initNewHostSelect();       // NEW
   restoreAllChannelHosts();  // NEW
+  refreshAll();
 });
 
 setInterval(refreshAll, 1000);

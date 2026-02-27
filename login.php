@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     session_regenerate_id(true);
     $_SESSION['is_admin'] = true;
     $_SESSION['admin_user'] = $u;
-    header('Location: /streams.php');
+    header('Location: /dashboard');
     exit;
   } else {
     $msg = 'Wrong admin or password.';
