@@ -3,11 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/dashboard', function () {
+$collectStreamStats = static function (): array {
     $baseDir = '/var/www/stream/live';
     $channels = [];
 
@@ -47,12 +43,25 @@ Route::get('/dashboard', function () {
 
     $offlineStreams = max(0, $totalStreams - $runningStreams);
 
-    return view('dashboard', [
+    return [
         'totalStreams' => $totalStreams,
         'runningStreams' => $runningStreams,
         'offlineStreams' => $offlineStreams,
-    ]);
+        'updatedAt' => now()->toDateTimeString(),
+    ];
+};
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', function () use ($collectStreamStats) {
+    return view('dashboard', $collectStreamStats());
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/dashboard/stats', function () use ($collectStreamStats) {
+    return response()->json($collectStreamStats());
+})->middleware(['auth', 'verified'])->name('dashboard.stats');
 
 Route::middleware('auth')->group(function () {
     Route::match(['GET', 'POST'], '/streams', function () {
