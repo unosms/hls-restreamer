@@ -18,6 +18,9 @@
                     <x-nav-link :href="route('streams')" :active="request()->routeIs('streams')">
                         {{ __('Manage Streams') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('settings')" :active="request()->routeIs('settings')">
+                        {{ __('Settings') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -75,6 +78,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('streams')" :active="request()->routeIs('streams')">
                 {{ __('Manage Streams') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('settings')" :active="request()->routeIs('settings')">
+                {{ __('Settings') }}
             </x-responsive-nav-link>
         </div>
 

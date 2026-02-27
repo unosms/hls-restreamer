@@ -14,6 +14,8 @@ $baseDir   = '/var/www/stream/live';
 $manage    = '/usr/local/bin/hls_manage.sh';
 $nginxLog  = '/var/log/nginx/access.log';
 $tailLines = 20000;
+$managerMode = $managerMode ?? 'streams';
+$isSettingsMode = ($managerMode === 'settings');
 
 function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
 function csrf_input(){
@@ -390,33 +392,38 @@ $totalChannels=count($channels);
 </head>
 <body>
 <div class="topbar">
-  <h2 style="margin:0;">HLS Streams Manager</h2>
-  <span class="pill">Total channels: <?=h((string)$totalChannels)?></span>
+  <h2 style="margin:0;"><?= $isSettingsMode ? 'Settings' : 'HLS Streams Manager' ?></h2>
+  <?php if (!$isSettingsMode): ?>
+    <span class="pill">Total channels: <?=h((string)$totalChannels)?></span>
+  <?php endif; ?>
 
-  <form method="post" style="margin:0;">
-    <?= csrf_input() ?>
-    <button name="action" value="export_backup" type="submit">Export Backup (.tar.gz)</button>
-  </form>
+  <?php if ($isSettingsMode): ?>
+    <form method="post" style="margin:0;">
+      <?= csrf_input() ?>
+      <button name="action" value="export_backup" type="submit">Export Backup (.tar.gz)</button>
+    </form>
 
-  <form method="post" enctype="multipart/form-data" style="margin:0;">
-    <?= csrf_input() ?>
-    <input type="hidden" name="action" value="upload_backup">
-    <input type="file" name="backup_file" accept=".tar.gz" required>
-    <button type="submit">Upload Backup</button>
-  </form>
+    <form method="post" enctype="multipart/form-data" style="margin:0;">
+      <?= csrf_input() ?>
+      <input type="hidden" name="action" value="upload_backup">
+      <input type="file" name="backup_file" accept=".tar.gz" required>
+      <button type="submit">Upload Backup</button>
+    </form>
 
-  <form method="post" style="margin:0;">
-    <?= csrf_input() ?>
-    <button name="action" value="restore_backup" type="submit"
-            onclick="return confirm('Restore will overwrite configs (streams.php, nginx, systemd, sudoers). Continue?');">
-      Restore Latest Uploaded
-    </button>
-  </form>
+    <form method="post" style="margin:0;">
+      <?= csrf_input() ?>
+      <button name="action" value="restore_backup" type="submit"
+              onclick="return confirm('Restore will overwrite configs (streams.php, nginx, systemd, sudoers). Continue?');">
+        Restore Latest Uploaded
+      </button>
+    </form>
+  <?php endif; ?>
 </div>
 
 <?php if ($msg): ?><div class="ok"><?= $msg ?></div><?php endif; ?>
 <?php if ($err): ?><div class="bad"><pre><?=h($err)?></pre></div><?php endif; ?>
 
+<?php if (!$isSettingsMode): ?>
 <div class="card">
   <h3>Add new stream</h3>
   <form method="post">
@@ -449,6 +456,12 @@ $totalChannels=count($channels);
     <?php endif; ?>
   </p>
 </div>
+<?php else: ?>
+<div class="card">
+  <h3>Backup & Restore</h3>
+  <p class="muted">Use these tools to export a backup, upload one, or restore the latest uploaded archive.</p>
+</div>
+<?php endif; ?>
 
 <div class="card">
   <h3>Existing channels</h3>

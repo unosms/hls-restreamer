@@ -56,8 +56,9 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
     Route::match(['GET', 'POST'], '/streams', function () {
-        // Serve manager backend for form actions and AJAX status requests.
+        // Backward compatibility for direct POST/AJAX calls.
         if (request()->isMethod('post') || request()->query('ajax') === 'status') {
+            $managerMode = 'streams';
             ob_start();
             include resource_path('views/dashboard_streams.php');
             return response(ob_get_clean());
@@ -67,10 +68,22 @@ Route::middleware('auth')->group(function () {
     })->name('streams');
 
     Route::match(['GET', 'POST'], '/streams-content', function () {
+        $managerMode = 'streams';
         ob_start();
         include resource_path('views/dashboard_streams.php');
         return response(ob_get_clean());
     })->name('streams.content');
+
+    Route::get('/settings', function () {
+        return view('settings');
+    })->name('settings');
+
+    Route::match(['GET', 'POST'], '/settings-content', function () {
+        $managerMode = 'settings';
+        ob_start();
+        include resource_path('views/dashboard_streams.php');
+        return response(ob_get_clean());
+    })->name('settings.content');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
