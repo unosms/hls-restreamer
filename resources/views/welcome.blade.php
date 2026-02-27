@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Restream Decoder by Lightwave</title>
+    <link rel="icon" type="image/png" href="{{ asset('lightwave.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
@@ -48,9 +49,16 @@
             border-radius: 16px;
             padding: 28px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 24px;
             box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            text-align: center;
+        }
+        .title-wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .title {
             margin: 0 0 8px;
@@ -72,21 +80,42 @@
             border-radius: 12px;
             overflow: hidden;
             background: #fff;
-            min-height: 280px;
+            min-height: 320px;
+            position: relative;
+            max-width: 520px;
+            margin: 0 auto;
+            animation: logoFloat 4.5s ease-in-out infinite;
+        }
+        .logo-box::before {
+            content: "";
+            position: absolute;
+            inset: -25%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(56, 189, 248, 0) 65%);
+            animation: logoSplash 3.6s ease-in-out infinite;
+            pointer-events: none;
         }
         .logo-box img {
             width: 100%;
             height: 100%;
-            min-height: 280px;
+            min-height: 320px;
             display: block;
             object-fit: cover;
+            position: relative;
+            z-index: 1;
+        }
+        @keyframes logoSplash {
+            0%, 100% { transform: scale(0.9); opacity: 0.35; }
+            50% { transform: scale(1.08); opacity: 0.75; }
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
         @media (max-width: 860px) {
             .topbar {
                 padding: 20px 20px 0;
             }
             .card {
-                grid-template-columns: 1fr;
                 padding: 20px;
             }
             .title {
@@ -115,12 +144,12 @@
 
     <main class="hero">
         <section class="card">
-            <div>
+            <div class="title-wrap">
                 <h1 class="title">Restream Decoder</h1>
                 <p class="subtitle">by <span class="brand">Lightwave</span></p>
             </div>
             <div class="logo-box">
-                <img src="{{ asset('lightwave.png') }}" alt="Lightwave Logo" style="width: 100%; height: 100%; object-fit: cover; min-height: 280px;">
+                <img src="{{ asset('lightwave.png') }}" alt="Lightwave Logo">
             </div>
         </section>
     </main>
