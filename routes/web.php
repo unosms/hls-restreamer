@@ -55,6 +55,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/brand/logo', function () {
+    $path = public_path('lightwave.png');
+    abort_unless(is_file($path), 404);
+    return response()->file($path, [
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->name('brand.logo');
+
 Route::get('/dashboard', function () use ($collectStreamStats) {
     return view('dashboard', $collectStreamStats());
 })->middleware(['auth', 'verified'])->name('dashboard');

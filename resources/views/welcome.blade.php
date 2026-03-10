@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Restream Decoder by Lightwave</title>
-    <link rel="icon" type="image/png" href="{{ asset('lightwave.png') }}">
+    <link rel="icon" type="image/png" href="{{ route('brand.logo') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
@@ -135,9 +135,6 @@
                 <a href="{{ url('/dashboard') }}" class="link-btn">Dashboard</a>
             @else
                 <a href="{{ route('login') }}" class="link-btn">Log in</a>
-                @if (Route::has('register'))
-                    <a href="{{ route('register') }}" class="link-btn">Register</a>
-                @endif
             @endauth
         </div>
     @endif
@@ -149,7 +146,7 @@
                 <p class="subtitle">by <span class="brand">Lightwave</span></p>
             </div>
             <div class="logo-box">
-                <img src="{{ asset('lightwave.png') }}" alt="Lightwave Logo">
+                <img src="{{ route('brand.logo') }}" alt="Lightwave Logo">
             </div>
         </section>
     </main>
