@@ -33,7 +33,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('streams') }}"
+                    <a href="{{ route('streams', absolute: false) }}"
                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
                         {{ __('Manage Streams') }}
                     </a>
@@ -51,7 +51,7 @@
 
             async function refreshStats() {
                 try {
-                    const res = await fetch(@json(route('dashboard.stats')), { headers: { 'Accept': 'application/json' } });
+                    const res = await fetch(@json(route('dashboard.stats', absolute: false)), { headers: { 'Accept': 'application/json' } });
                     if (!res.ok) return;
 
                     const data = await res.json();
@@ -68,3 +68,4 @@
         })();
     </script>
 </x-app-layout>
+

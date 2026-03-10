@@ -1,1 +1,2 @@
-<img src="{{ route('brand.logo') }}" alt="Lightwave Logo" {{ $attributes }} />
+<img src="{{ route('brand.logo', absolute: false) }}" alt="Lightwave Logo" {{ $attributes }} />
+
