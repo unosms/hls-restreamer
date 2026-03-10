@@ -8,11 +8,10 @@
     <div class="mx-auto sm:px-6 lg:px-8 pb-6">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <iframe
-                src="{{ route('streams.content', absolute: false) }}"
+                src="{{ route('streams.content') }}"
                 title="Streams Manager"
                 style="width: 100%; min-height: calc(100vh - 180px); border: 0;"
             ></iframe>
         </div>
     </div>
 </x-app-layout>
-
