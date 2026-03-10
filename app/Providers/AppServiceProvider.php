@@ -24,10 +24,10 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $request = request();
-        $root = rtrim((string) $request->root(), '/');
-        if ($root !== '') {
-            URL::forceRootUrl($root);
-        }
+        URL::macro('appRoute', function (string $name, array $parameters = []): string {
+            $path = app('url')->route($name, $parameters, false);
+            $base = rtrim((string) request()->getBaseUrl(), '/');
+            return ($base !== '' ? $base : '') . $path;
+        });
     }
 }

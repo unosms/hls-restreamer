@@ -6,7 +6,7 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ url()->appRoute('password.email') }}">
         @csrf
 
         <!-- Email Address -->
@@ -23,3 +23,4 @@
         </div>
     </form>
 </x-guest-layout>
+
