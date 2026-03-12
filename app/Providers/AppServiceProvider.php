@@ -20,14 +20,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->runningInConsole()) {
-            return;
+        $appUrl = rtrim((string) config('app.url'), '/');
+        if ($appUrl !== '') {
+            URL::forceRootUrl($appUrl);
+
+            if (str_starts_with($appUrl, 'https://')) {
+                URL::forceScheme('https');
+            } elseif (str_starts_with($appUrl, 'http://')) {
+                URL::forceScheme('http');
+            }
         }
 
         URL::macro('appRoute', function (string $name, array $parameters = []): string {
-            $path = app('url')->route($name, $parameters, false);
-            $base = rtrim((string) request()->getBaseUrl(), '/');
-            return ($base !== '' ? $base : '') . $path;
+            return app('url')->route($name, $parameters, true);
         });
     }
 }

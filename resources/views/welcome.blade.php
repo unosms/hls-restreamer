@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Restream Decoder by Lightwave</title>
-    <link rel="icon" type="image/png" href="{{ url()->appRoute('brand.logo') }}">
+    <link rel="icon" type="image/png" href="{{ asset('lightwave.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
@@ -146,7 +146,7 @@
                 <p class="subtitle">by <span class="brand">Lightwave</span></p>
             </div>
             <div class="logo-box">
-                <img src="{{ url()->appRoute('brand.logo') }}" alt="Lightwave Logo">
+                <img src="{{ asset('lightwave.png') }}" alt="Lightwave Logo">
             </div>
         </section>
     </main>

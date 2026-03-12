@@ -1,2 +1,2 @@
-<img src="{{ url()->appRoute('brand.logo') }}" alt="Lightwave Logo" {{ $attributes }} />
+<img src="{{ asset('lightwave.png') }}" alt="Lightwave Logo" {{ $attributes }} />
 
